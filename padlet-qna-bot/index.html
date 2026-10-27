@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>패들렛 AI 답변 도우미</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --bg:#f6f3ec; --card:#fffdf8; --ink:#1f2328; --sub:#6b6f76; --line:#e6e0d4;
+    --accent:#e2573b; --accent-soft:#fde9e3; --ok:#2f8f5b; --ok-soft:#e3f3ea;
+    --warn:#b7791f; --warn-soft:#fbf0dc; --err:#c0392b; --err-soft:#fbe4e1;
+    --radius:14px; --shadow:0 1px 0 rgba(0,0,0,.03),0 6px 20px -12px rgba(60,40,10,.25);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17181b; --card:#202226; --ink:#eceae5; --sub:#a1a3a8; --line:#33363c;
+      --accent:#ff7a5c; --accent-soft:#3a2420; --ok:#5cc58b; --ok-soft:#1c3226;
+      --warn:#e0a84a; --warn-soft:#352a17; --err:#ff7b6b; --err-soft:#3a1f1c;
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:"Pretendard Variable",Pretendard,system-ui,sans-serif;font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+  header{display:flex;align-items:center;gap:12px;margin:8px 0 18px}
+  .logo{width:42px;height:42px;border-radius:12px;background:var(--accent);display:grid;place-items:center;font-size:22px;flex:none}
+  h1{font-size:20px;margin:0;letter-spacing:-.02em}
+  header p{margin:0;color:var(--sub);font-size:13px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow)}
+  .card h2{font-size:14px;margin:0 0 12px;color:var(--sub);font-weight:600;letter-spacing:.02em}
+  label{display:block;font-size:13px;color:var(--sub);margin:10px 0 6px}
+  input[type=text],input[type=password],select,textarea{width:100%;font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+  textarea{resize:vertical;min-height:80px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .row > *{flex:1 1 auto}
+  button{font:inherit;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:var(--line);color:var(--ink);font-weight:600}
+  button:disabled{opacity:.5;cursor:default}
+  .primary{background:var(--accent);color:#fff}
+  .ghost{background:transparent;border:1px solid var(--line)}
+  .okbtn{background:var(--ok);color:#fff}
+  .big{width:100%;padding:14px;font-size:16px;border-radius:12px}
+  .seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:4px;gap:4px}
+  .seg button{flex:1;background:transparent;font-weight:600;color:var(--sub)}
+  .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+  .hint{font-size:12.5px;color:var(--sub);margin-top:6px}
+  .badge{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--bg);color:var(--sub)}
+  .badge.ok{background:var(--ok-soft);color:var(--ok)}
+  .badge.warn{background:var(--warn-soft);color:var(--warn)}
+  .boardinfo{margin-top:10px;display:none;gap:8px;align-items:center;flex-wrap:wrap}
+  .boardinfo a{color:var(--accent);font-size:13px}
+  .status{display:flex;align-items:center;gap:10px;margin-top:12px;font-size:13px;color:var(--sub);flex-wrap:wrap}
+  .dot{width:10px;height:10px;border-radius:50%;background:var(--line);flex:none}
+  .dot.live{background:var(--ok);box-shadow:0 0 0 0 var(--ok);animation:pulse 1.8s infinite}
+  .dot.busy{background:var(--warn)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(47,143,91,.5)}70%{box-shadow:0 0 0 8px rgba(47,143,91,0)}100%{box-shadow:0 0 0 0 rgba(47,143,91,0)}}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}
+  .stat{background:var(--bg);border-radius:10px;padding:10px;text-align:center}
+  .stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+  .stat span{font-size:12px;color:var(--sub)}
+  .msg{display:none;margin-top:10px;padding:10px 12px;border-radius:10px;font-size:13.5px}
+  .msg.err{display:block;background:var(--err-soft);color:var(--err)}
+  .msg.info{display:block;background:var(--ok-soft);color:var(--ok)}
+  .feed-head{display:flex;justify-content:space-between;align-items:center;margin:22px 4px 10px}
+  .feed-head h3{margin:0;font-size:15px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px;box-shadow:var(--shadow)}
+  .item.draft{border-color:var(--warn)}
+  .item.error{border-color:var(--err)}
+  .meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--sub);margin-bottom:6px;flex-wrap:wrap}
+  .q{font-weight:600;white-space:pre-wrap;word-break:break-word}
+  .a{margin-top:10px;padding:10px 12px;background:var(--bg);border-radius:10px;white-space:pre-wrap;word-break:break-word;font-size:14px}
+  .a textarea{background:var(--card);min-height:140px}
+  .actions{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+  .empty{text-align:center;color:var(--sub);padding:28px 10px;font-size:14px}
+  .hidden{display:none!important}
+  details summary{cursor:pointer;color:var(--sub);font-size:13px;margin-top:12px}
+  .chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink);margin-top:10px}
+  .chk input{width:18px;height:18px;accent-color:var(--accent)}
+  footer{text-align:center;color:var(--sub);font-size:12px;margin-top:30px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">🤖</div>
+    <div>
+      <h1>패들렛 AI 답변 도우미</h1>
+      <p>강의 중 올라온 질문에 Claude가 댓글로 1차 답변을 달아요</p>
+    </div>
+  </header>
+
+  <!-- 로그인 -->
+  <section class="card" id="loginCard">
+    <h2>관리자 로그인</h2>
+    <div class="row">
+      <input type="password" id="pw" placeholder="관리자 비밀번호 (Vercel ADMIN_PASSWORD)" autocomplete="current-password">
+      <button class="primary" id="loginBtn" style="flex:0 0 auto">들어가기</button>
+    </div>
+    <div class="msg" id="loginMsg"></div>
+  </section>
+
+  <div id="app" class="hidden">
+    <!-- 패들렛 선택 -->
+    <section class="card">
+      <h2>① 오늘 강의 패들렛</h2>
+      <select id="boardSelect"><option value="">내 패들렛 불러오는 중…</option></select>
+      <label for="boardUrl">또는 패들렛 주소 붙여넣기</label>
+      <input type="text" id="boardUrl" placeholder="https://padlet.com/아이디/제목-abcd1234efgh5678">
+      <div class="boardinfo" id="boardInfo"></div>
+
+      <label for="memo">강의 메모 <span style="font-weight:400">(선택 · 오늘 다룬 내용, 핵심 개념, 자료 링크 등)</span></label>
+      <textarea id="memo" placeholder="예) 오늘 주제: 생성형 AI로 수업 자료 만들기&#10;- 프롬프트 5요소(역할·맥락·과업·형식·예시)&#10;- 학생 개인정보 입력 금지 원칙&#10;- 실습: Claude로 학습지 만들기"></textarea>
+      <div class="hint">메모는 이 브라우저에만 패들렛별로 저장돼요. 메모가 구체적일수록 강의 맥락에 맞는 답변이 나와요.</div>
+    </section>
+
+    <!-- 답변 방식 -->
+    <section class="card">
+      <h2>② 답변 방식</h2>
+      <div class="seg" id="modeSeg">
+        <button data-mode="auto" class="on">⚡ 바로 게시</button>
+        <button data-mode="preview">✋ 확인 후 게시</button>
+      </div>
+      <div class="hint" id="modeHint"></div>
+      <label class="chk"><input type="checkbox" id="ownPosts"> 내가 쓴 게시물에도 답변하기</label>
+      <div class="hint">보통은 꺼 두세요. 강사가 올린 안내 글에는 답하지 않아요.</div>
+      <details>
+        <summary>확인 주기</summary>
+        <select id="interval" style="margin-top:8px">
+          <option value="20">20초마다</option>
+          <option value="30" selected>30초마다</option>
+          <option value="60">1분마다</option>
+        </select>
+      </details>
+    </section>
+
+    <!-- 실행 -->
+    <section class="card">
+      <h2>③ 실행</h2>
+      <button class="primary big" id="startBtn">▶ 실시간 답변 시작</button>
+      <div class="row" style="margin-top:8px">
+        <button class="ghost" id="onceBtn">지금 한 번 확인</button>
+      </div>
+      <div class="status"><span class="dot" id="dot"></span><span id="statusText">대기 중</span></div>
+      <div class="stats">
+        <div class="stat"><b id="sTotal">–</b><span>전체 게시물</span></div>
+        <div class="stat"><b id="sDone">–</b><span>답변 완료</span></div>
+        <div class="stat"><b id="sWait">–</b><span>답변 대기</span></div>
+      </div>
+      <div class="msg" id="runMsg"></div>
+    </section>
+
+    <div class="feed-head">
+      <h3>답변 기록</h3>
+      <button class="ghost" id="clearBtn" style="padding:6px 10px;font-size:12.5px">기록 지우기</button>
+    </div>
+    <div id="feed"><div class="empty">아직 처리한 질문이 없어요.<br>실시간 답변을 시작하면 여기에 표시돼요.</div></div>
+
+    <footer>답변은 패들렛 댓글에 “🤖 AI 답변” 표시와 함께 달려요 · 이미 답한 글은 다시 답하지 않아요</footer>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const LS = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  };
+
+  const state = {
+    pw: LS.get('pqb_pw', ''),
+    mode: LS.get('pqb_mode', 'auto'),
+    board: LS.get('pqb_board', ''),
+    running: false, busy: false, timer: null, wakeLock: null, backoff: 0,
+  };
+
+  const boardKey = () => (state.board || '').trim();
+  const feedOf = () => LS.get('pqb_feed_' + boardKey(), []);
+  const saveFeed = (f) => LS.set('pqb_feed_' + boardKey(), f.slice(0, 200));
+  const skipsOf = () => LS.get('pqb_skip_' + boardKey(), []);
+
+  async function api(path, body) {
+    const r = await fetch(path, {
+      method: body ? 'POST' : 'GET',
+      headers: { 'content-type': 'application/json', 'x-admin-key': state.pw },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const j = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(j.error || ('오류 ' + r.status)); e.status = r.status; throw e; }
+    return j;
+  }
+
+  function showMsg(el, text, kind = 'err') {
+    el.className = 'msg ' + (text ? kind : '');
+    el.textContent = text || '';
+  }
+
+  /* ---------- 로그인 ---------- */
+  async function login() {
+    state.pw = $('pw').value.trim() || state.pw;
+    if (!state.pw) return;
+    $('loginBtn').disabled = true;
+    try {
+      const j = await api('/api/boards');
+      LS.set('pqb_pw', state.pw);
+      $('loginCard').classList.add('hidden');
+      $('app').classList.remove('hidden');
+      fillBoards(j.boards || [], j.autoTag);
+    } catch (e) {
+      if (e.status === 401) { LS.set('pqb_pw', ''); showMsg($('loginMsg'), e.message); }
+      else {
+        // 비밀번호는 맞지만 Padlet 목록을 못 불러온 경우에도 주소 입력으로 진행
+        LS.set('pqb_pw', state.pw);
+        $('loginCard').classList.add('hidden');
+        $('app').classList.remove('hidden');
+        fillBoards([], '#AI답변');
+        showMsg($('runMsg'), '내 패들렛 목록을 불러오지 못했어요: ' + e.message + ' — 주소를 직접 붙여넣어 주세요.');
+      }
+    } finally { $('loginBtn').disabled = false; }
+  }
+  $('loginBtn').onclick = login;
+  $('pw').addEventListener('keydown', (e) => { if (e.key === 'Enter') login(); });
+
+  /* ---------- 패들렛 선택 ---------- */
+  let autoTag = '#AI답변';
+  let boardsCache = [];
+  function fillBoards(list, tag) {
+    autoTag = tag || autoTag;
+    boardsCache = list;
+    const sel = $('boardSelect');
+    sel.innerHTML = '<option value="">— 내 패들렛에서 고르기 —</option>' +
+      list.map(b => `<option value="${b.id}">${escapeHtml(b.title)}${b.auto ? '  · 🤖' : ''}</option>`).join('');
+    if (state.board) {
+      if (list.some(b => b.id === state.board)) sel.value = state.board; else $('boardUrl').value = state.board;
+    }
+    onBoardChange();
+  }
+  $('boardSelect').onchange = () => { $('boardUrl').value = ''; state.board = $('boardSelect').value; onBoardChange(); };
+  $('boardUrl').oninput = () => { $('boardSelect').value = ''; state.board = $('boardUrl').value.trim(); onBoardChange(); };
+
+  function onBoardChange(remote) {
+    LS.set('pqb_board', state.board);
+    $('memo').value = LS.get('pqb_memo_' + boardKey(), '');
+    const b = remote || boardsCache.find(x => x.id === state.board);
+    const info = $('boardInfo');
+    if (b) {
+      info.style.display = 'flex';
+      info.innerHTML = `<span class="badge">${escapeHtml(b.title || '')}</span>` +
+        (b.auto ? '<span class="badge ok">🤖 예약 자동답변 켜짐</span>'
+                : `<span class="badge warn" title="패들렛 설명에 ${autoTag} 를 넣으면 이 화면을 꺼도 정해진 시간마다 자동 답변해요">예약 자동답변 꺼짐</span>`) +
+        (b.url ? `<a href="${b.url}" target="_blank" rel="noopener">패들렛 열기 ↗</a>` : '');
+    } else { info.style.display = 'none'; info.innerHTML = ''; }
+    renderFeed();
+  }
+  $('memo').oninput = () => LS.set('pqb_memo_' + boardKey(), $('memo').value);
+
+  /* ---------- 모드 ---------- */
+  function setMode(m) {
+    state.mode = m; LS.set('pqb_mode', m);
+    document.querySelectorAll('#modeSeg button').forEach(b => b.classList.toggle('on', b.dataset.mode === m));
+    $('modeHint').textContent = m === 'auto'
+      ? '새 질문이 올라오면 Claude 답변을 바로 패들렛 댓글로 게시해요.'
+      : 'Claude가 답변 초안만 만들어요. 아래 기록에서 읽고 고친 뒤 [게시]를 눌러야 올라가요.';
+  }
+  document.querySelectorAll('#modeSeg button').forEach(b => b.onclick = () => setMode(b.dataset.mode));
+  $('ownPosts').checked = LS.get('pqb_own', false);
+  $('ownPosts').onchange = () => LS.set('pqb_own', $('ownPosts').checked);
+  $('interval').value = String(LS.get('pqb_interval', 30));
+  $('interval').onchange = () => LS.set('pqb_interval', Number($('interval').value));
+
+  /* ---------- 실행 ---------- */
+  function setStatus(text, kind) {
+    $('statusText').textContent = text;
+    $('dot').className = 'dot ' + (kind || '');
+  }
+
+  async function runOnce() {
+    if (state.busy) return;
+    if (!boardKey()) { showMsg($('runMsg'), '먼저 패들렛을 고르거나 주소를 넣어 주세요.'); stop(); return; }
+    state.busy = true;
+    setStatus('확인하는 중…', 'busy');
+    const feed = feedOf();
+    const skipIds = [...skipsOf(), ...feed.filter(f => f.status === 'draft').map(f => f.id)];
+    try {
+      const j = await api('/api/process', {
+        board: boardKey(), mode: state.mode, memo: $('memo').value,
+        includeOwnPosts: $('ownPosts').checked, skipIds,
+      });
+      state.backoff = 0;
+      $('sTotal').textContent = j.totalPosts;
+      $('sDone').textContent = j.answered;
+      $('sWait').textContent = Math.max(0, j.pending);
+      if (j.board) onBoardInfo(j.board);
+      const now = new Date().toISOString();
+      const f = feedOf();
+      for (const r of j.results) {
+        const idx = f.findIndex(x => x.id === r.id);
+        const entry = { id: r.id, subject: r.subject, body: r.body, author: r.author, url: r.url, answer: r.answer || '', status: r.status, error: r.error || '', at: now };
+        if (idx >= 0) f[idx] = entry; else f.unshift(entry);
+      }
+      saveFeed(f);
+      renderFeed();
+      const posted = j.results.filter(r => r.status === 'posted').length;
+      const drafts = j.results.filter(r => r.status === 'draft').length;
+      const errs = j.results.filter(r => r.status === 'error');
+      showMsg($('runMsg'), errs.length ? `${errs.length}건 처리 실패: ${errs[0].error}` : '');
+      const t = new Date().toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      let s = `${t} 확인`;
+      if (posted) s += ` · ${posted}건 답변 게시`;
+      if (drafts) s += ` · 초안 ${drafts}건`;
+      setStatus(state.running ? s + ' · 실시간 감시 중' : s, state.running ? 'live' : '');
+    } catch (e) {
+      showMsg($('runMsg'), e.message);
+      setStatus('오류 — ' + (state.running ? '잠시 후 다시 시도해요' : '중지됨'), '');
+      if (e.status === 401) { stop(); LS.set('pqb_pw', ''); location.reload(); }
+      state.backoff = Math.min((state.backoff || 1) * 2, 8);
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  function onBoardInfo(b) {
+    const known = boardsCache.find(x => x.id === b.id);
+    if (!known) onBoardChange(b);
+  }
+
+  function schedule() {
+    clearTimeout(state.timer);
+    if (!state.running) return;
+    const sec = Number($('interval').value) * Math.max(1, state.backoff || 1);
+    state.timer = setTimeout(async () => { await runOnce(); schedule(); }, sec * 1000);
+  }
+
+  async function start() {
+    if (!boardKey()) { showMsg($('runMsg'), '먼저 패들렛을 고르거나 주소를 넣어 주세요.'); return; }
+    state.running = true;
+    $('startBtn').textContent = '⏸ 실시간 답변 멈추기';
+    $('startBtn').classList.remove('primary');
+    try { state.wakeLock = await navigator.wakeLock?.request('screen'); } catch {}
+    await runOnce();
+    schedule();
+  }
+  function stop() {
+    state.running = false;
+    clearTimeout(state.timer);
+    $('startBtn').textContent = '▶ 실시간 답변 시작';
+    $('startBtn').classList.add('primary');
+    try { state.wakeLock?.release(); } catch {}
+    state.wakeLock = null;
+    if (!state.busy) setStatus('멈춤', '');
+  }
+  $('startBtn').onclick = () => state.running ? stop() : start();
+  $('onceBtn').onclick = () => runOnce();
+  document.addEventListener('visibilitychange', async () => {
+    if (state.running && document.visibilityState === 'visible') {
+      try { state.wakeLock = await navigator.wakeLock?.request('screen'); } catch {}
+    }
+  });
+
+  /* ---------- 기록 ---------- */
+  function renderFeed() {
+    const f = feedOf();
+    const el = $('feed');
+    if (!f.length) {
+      el.innerHTML = '<div class="empty">아직 처리한 질문이 없어요.<br>실시간 답변을 시작하면 여기에 표시돼요.</div>';
+      return;
+    }
+    el.innerHTML = f.map((x, i) => {
+      const q = [x.subject, x.body].filter(Boolean).join('\n');
+      const time = x.at ? new Date(x.at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }) : '';
+      const badge = { posted: '<span class="badge ok">게시됨</span>', draft: '<span class="badge warn">확인 대기</span>', error: '<span class="badge" style="color:var(--err)">실패</span>', skipped: '<span class="badge">건너뜀</span>' }[x.status] || '';
+      let ans = '';
+      if (x.status === 'draft') {
+        ans = `<div class="a"><textarea data-i="${i}" class="draftText">${escapeHtml(x.answer)}</textarea></div>
+          <div class="actions"><button class="ghost" data-skip="${i}">건너뛰기</button><button class="okbtn" data-pub="${i}">게시</button></div>`;
+      } else if (x.status === 'error') {
+        ans = `<div class="a" style="color:var(--err)">${escapeHtml(x.error)}<br><span class="hint">다음 확인 때 다시 시도해요.</span></div>`;
+      } else if (x.answer) {
+        ans = `<div class="a">${escapeHtml(x.answer).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')}</div>`;
+      }
+      return `<article class="item ${x.status}">
+        <div class="meta"><span>${escapeHtml(x.author || '익명')} · ${time}</span><span>${badge}${x.url ? ` <a href="${x.url}" target="_blank" rel="noopener" style="color:var(--accent)">↗</a>` : ''}</span></div>
+        <div class="q">${escapeHtml(q || '(첨부만 있는 게시물)')}</div>${ans}</article>`;
+    }).join('');
+
+    el.querySelectorAll('.draftText').forEach(t => t.oninput = () => {
+      const f2 = feedOf(); f2[+t.dataset.i].answer = t.value; saveFeed(f2);
+    });
+    el.querySelectorAll('[data-pub]').forEach(b => b.onclick = async () => {
+      const i = +b.dataset.pub; const f2 = feedOf(); const x = f2[i];
+      b.disabled = true; b.textContent = '게시 중…';
+      try {
+        await api('/api/publish', { postId: x.id, answer: x.answer });
+        x.status = 'posted'; saveFeed(f2); renderFeed();
+      } catch (e) { b.disabled = false; b.textContent = '게시'; showMsg($('runMsg'), e.message); }
+    });
+    el.querySelectorAll('[data-skip]').forEach(b => b.onclick = () => {
+      const i = +b.dataset.skip; const f2 = feedOf();
+      f2[i].status = 'skipped'; saveFeed(f2);
+      const s = skipsOf(); s.push(f2[i].id); LS.set('pqb_skip_' + boardKey(), s.slice(-500));
+      renderFeed();
+    });
+  }
+  $('clearBtn').onclick = () => {
+    if (!confirm('이 패들렛의 답변 기록을 화면에서 지울까요? (패들렛 댓글은 그대로 남아요)')) return;
+    const keepDrafts = feedOf().filter(x => x.status === 'draft');
+    saveFeed(keepDrafts); renderFeed();
+  };
+
+  function escapeHtml(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  /* ---------- 시작 ---------- */
+  setMode(state.mode);
+  if (state.pw) { $('pw').value = state.pw; login(); }
+})();
+</script>
+</body>
+</html>

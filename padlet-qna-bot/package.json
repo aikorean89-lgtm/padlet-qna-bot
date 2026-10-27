@@ -1,0 +1,8 @@
+{
+  "name": "padlet-qna-bot",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "패들렛 질문에 Claude가 자동으로 댓글 답변을 다는 강의용 도구",
+  "engines": { "node": ">=20" }
+}
