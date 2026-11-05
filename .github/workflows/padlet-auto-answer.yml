@@ -1,0 +1,28 @@
+# (선택) 15분마다 #AI답변 패들렛을 확인해서 자동 답변
+# 저장소 Settings → Secrets and variables → Actions 에 아래 2개를 등록하면 작동합니다.
+#   APP_URL      예) https://padlet-qna-bot.vercel.app
+#   CRON_SECRET  Vercel 환경변수 CRON_SECRET 과 같은 값
+name: padlet-auto-answer
+
+on:
+  schedule:
+    # 한국시간 오전 9시 ~ 밤 9시, 15분마다 (UTC 00~12시)
+    - cron: '*/15 0-12 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Call /api/cron
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$APP_URL" ] || [ -z "$CRON_SECRET" ]; then
+            echo "APP_URL / CRON_SECRET 시크릿이 없어 건너뜁니다."; exit 0
+          fi
+          curl -sS --fail-with-body -m 90 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$APP_URL/api/cron"

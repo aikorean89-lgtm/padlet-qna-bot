@@ -35,6 +35,7 @@
 | `ANTHROPIC_API_KEY` | Claude API 키 | ✅ |
 | `ADMIN_PASSWORD` | 관리 화면 비밀번호 (아무 문자열) | ✅ |
 | `CRON_SECRET` | 예약 실행용 비밀값 (긴 아무 문자열) | 예약 자동답변 쓸 때 |
+| `DEFAULT_BOARD` | `https://padlet.com/aikorean89/padlet-s024rs87hoanqoy6i7h8` (관리 화면에서 자동 선택) | 선택 |
 | `INSTRUCTOR_NAME` | 예: `조은택` (답변 말투에 반영) | 선택 |
 | `CLAUDE_MODEL` | 기본 `claude-sonnet-5-5` / 저렴하게: `claude-haiku-5-5` | 선택 |
 
